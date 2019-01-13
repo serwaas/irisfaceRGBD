@@ -126,6 +126,7 @@ def ParseDir(path):
 
     return x__path, y__path, file_names
 
+
 def Recognize(gallery_path, probe_path):
     net = InitCnn()
 
@@ -162,6 +163,7 @@ def Recognize(gallery_path, probe_path):
 
 # Application main
 if __name__ == '__main__':
-    sGalPath = 'E:/BosphorusDB/ply/gallery'
-    sProbPath = 'E:/BosphorusDB/ply/probe'
+
+    sGalPath = './3DFace/Gallery'
+    sProbPath = './3DFace/Probe'
     Recognize(sGalPath, sProbPath)
