@@ -1,3 +1,4 @@
+from __future__ import print_function
 import caffe
 import numpy as np
 import scipy.misc
@@ -8,7 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import sys
 
 
-def getFeatures(model, adata):
+def getFeatures(net, adata):
     sFeatures = []
     for i in range(0,len(adata)):
         img = adata[i]
@@ -88,86 +89,79 @@ def to_rgb1a(im):
     return ret
 
 
+def InitCnn():
+    caffe.set_mode_cpu()
+    net = caffe.Net("VGG_FACE_deploy.prototxt", "Weights.caffemodel", caffe.TEST)
+
+    print('The CNN was successfully initiated')
+    return net
+
+def ParseDir(path):
+
+    avg = np.array([37, 37, 37])
+    s_target = '.npy'
+
+    x__path = []
+    y__path = []
+    file_names = []
+
+    dirs = [f for f in listdir(path) if isfile(join(path, f)) and (f.endswith(s_target))]
+    n_id = len(dirs)
+    for i, n in enumerate(dirs):
+        y_temp = np.zeros(n_id)
+        y_temp[i] = 1
+        x_temp = np.load(path + '/' + n)
+        x_temp = to_rgb1a(x_temp)
+        image = scipy.misc.imresize(x_temp.astype('float32'), [224, 224])
+        image = image - avg
+        image = image.transpose((2, 0, 1))
+
+        x__path.append(image)
+        y__path.append(y_temp)
+        file_names.append(n)
+
+    x__path = np.array(x__path)
+    y__path = np.array(y__path)
+    print(path, ' data shape: ', x__path.shape)
+
+    return x__path, y__path, file_names
+
+def Recognize(gallery_path, probe_path):
+    net = InitCnn()
+
+    x__gallery, y__gallery, file_names_gallery = ParseDir(gallery_path)
+
+    x__probe, y__probe, file_names_probe = ParseDir(probe_path)
+
+    s_gallery_label = np.where(y__gallery == 1)
+    s_gallery_label = s_gallery_label[1]
+
+    s_probe_label = np.where(y__probe == 1)
+    s_probe_label = s_probe_label[1]
+
+    [results, label, min, max_similarities, similarities, similaritiesMatrix] = getIdentificationAccuracy(net,
+                                                                                                          x__gallery,
+                                                                                                          s_gallery_label,
+                                                                                                          x__probe,
+                                                                                                          s_probe_label)
+
+    print("rank-1 acc: ", results)
+
+    for i in range(0, len(file_names_probe)):
+        try:
+            print(file_names_probe[i],
+                  'Probe Label:', s_gallery_label[i],
+                  'Matched Label:', file_names_gallery[min[i]],
+                  'max similarity: ', max_similarities[i],
+                  'ref similarity: ', similarities[i],
+                  'matches: ', similaritiesMatrix[i])
+            print('\n')
+        except:
+            print('err', i)
 
 
-sTarget = '.npy'
-
-caffe.set_mode_cpu()
-net = caffe.Net("VGG_FACE_deploy.prototxt", "Weights.caffemodel",  caffe.TEST)
-
-print 'done'
-
-X_Gallery = []
-X_Probe = []
-
-Y_Gallery = []
-Y_Probe = []
-###
-fileNames = []
-avg = np.array([37,37,37])
-
-## Gallery Path
-sGalPath = './3DFace/gallery'
-
-
-dirs = [f for f in listdir(sGalPath) if isfile(join(sGalPath, f)) and (f.endswith(sTarget))]
-N_id = len(dirs)
-for i, n in enumerate(dirs):
-
-    Y_temp = np.zeros(N_id)
-    Y_temp[i] = 1
-    X_temp = np.load(sGalPath + '/'+ n)
-    X_temp = to_rgb1a(X_temp)
-    image = scipy.misc.imresize(X_temp.astype('float32'), [224, 224])
-    image = image - avg
-    image = image.transpose((2, 0, 1))
-
-    X_Gallery.append(image)
-    Y_Gallery.append(Y_temp)
-
-
-
-## Probe Path
-sProbPath = './3DFace/probe'
-dirs = [f for f in listdir(sProbPath) if isfile(join(sProbPath, f)) and (f.endswith(sTarget))]
-
-N_id = len(dirs)
-
-for i, n in enumerate(dirs):
-    Y_temp = np.zeros(N_id)
-    Y_temp[i] = 1
-    X_temp = np.load(sProbPath + '/' + n)
-    X_temp = to_rgb1a(X_temp)
-    image = scipy.misc.imresize(X_temp.astype('float32'), [224, 224])
-    image = image - avg
-    image = image.transpose((2, 0, 1))
-    X_Probe.append(image)
-    Y_Probe.append(Y_temp)
-    fileNames.append(n)
-
-
-X_Gallery = np.array(X_Gallery)
-print('Gallery data shape: ', X_Gallery.shape)
-X_Probe= np.array(X_Probe)
-print('Probe data shape: ', X_Probe.shape)
-Y_Gallery = np.array(Y_Gallery)
-Y_Probe = np.array(Y_Probe)
-
-sGallerylabel = np.where(Y_Gallery == 1)
-sGallerylabel = sGallerylabel[1]
-
-sProbLabel = np.where(Y_Probe == 1)
-sProbLabel = sProbLabel[1]
-
-[results, label, min, max_similarities, similarities, similaritiesMatrix] = getIdentificationAccuracy(net, X_Gallery, sGallerylabel, X_Probe, sProbLabel)
-
-
-print("rank-1 acc: ", results)
-
-
-for i in range(0, len(fileNames)):
-    print(fileNames[i], 'Probe Label:', sGallerylabel[i], 'Matched Label:',
-          min[i], ' max similarity: ', max_similarities[i], 'ref similarity: ', similarities[i])
-    print ('\n')
-
-
+# Application main
+if __name__ == '__main__':
+    sGalPath = 'E:/BosphorusDB/ply/gallery'
+    sProbPath = 'E:/BosphorusDB/ply/probe'
+    Recognize(sGalPath, sProbPath)

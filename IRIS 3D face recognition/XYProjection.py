@@ -25,8 +25,8 @@ def XYProjectedImage(vertsArr):
         i_tf = X_EXPAND*(x + 1.0)
         i_yf = Y_EXPAND*(-y + 1.0)
 
-        i_tc = np.floor(i_tf)
-        i_yc = np.floor(i_yf)
+        i_tc = np.int64(np.floor(i_tf))
+        i_yc = np.int64(np.floor(i_yf))
 
         #weights
         temp_dx = abs(i_tf - i_tc)

@@ -5,13 +5,14 @@ import numpy as np
 from plyfile import PlyData, PlyElement
 from XYProjection import XYProjectedImage
 from numpy import cross, eye, dot
-from scipy.linalg import expm3, norm
+from scipy.linalg import expm, norm
 from os import listdir
 from os.path import isfile, join
-
+from pprint import pprint
+#exit()
 
 def M(axis, theta):
-    return expm3(cross(eye(3), axis/norm(axis)*theta))
+    return expm(cross(eye(3), axis/norm(axis)*theta))
 
 def distance(v1,v2):
     return sum([(x-y)**2 for (x,y) in zip(v1,v2)])**(0.5)
@@ -19,20 +20,22 @@ def distance(v1,v2):
 
 ## Define Path
 
-Paths = ['./3DFace/Probe', './3DFace/Gallery']
+#Paths = ['./3DFace/Probe', './3DFace/Gallery']
+Paths = ['E:/BosphorusDB/ply/probe', 'E:/BosphorusDB/ply/gallery']
+
 
 for sDefaultPath in Paths:
 
-    sSavePath = sDefaultPath
+    sSavePath = sDefaultPath#.replace('ply', 'npy')
 
     x0 = 0;
     y0 = 0;
-    sDefaultPath = sSavePath
+    # sDefaultPath = sSavePath
 
     dir = [f for f in listdir(sDefaultPath) if isfile(join(sDefaultPath, f)) and (f.endswith('.ply'))]
 
     for sFilePath in dir:
-
+        pprint(sFilePath)
         sPointCloud = PlyData.read(sDefaultPath + '/' + sFilePath)
         sPointCloud = sPointCloud['vertex'][:]
         sPointCloudVerts = [list(row)[:3] for row in sPointCloud]

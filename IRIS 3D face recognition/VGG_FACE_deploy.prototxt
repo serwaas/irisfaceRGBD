@@ -334,7 +334,7 @@ layers {
   name: "fc8"
   type: INNER_PRODUCT
   inner_product_param {
-    num_output: 558
+    num_output: 2622
   }
 }
 layers {
@@ -342,4 +342,4 @@ layers {
   top: "prob"
   name: "prob"
   type: SOFTMAX
-}
+} 
